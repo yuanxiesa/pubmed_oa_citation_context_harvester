@@ -159,7 +159,7 @@ def main():
     print('Extracting urls for all citing articles ...')
     urls = extract_urls(icite_file, oa_list_file)
 
-    for i in range(2):  # replace len(urls later)
+    for i in range(len(urls)):
 
         print("Downloading file: ", i, '/', len(urls), ',PMID', urls.loc[i, 'PMID'])
         file_download(urls.loc[i, 'File'])
