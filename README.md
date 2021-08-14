@@ -1,8 +1,8 @@
 # PubMed Open Access Subset citation context harvester
 
-I wrote this program to help me harvesting citation contexts citing ONE specific paper in the PubMed Open Access Subset (https://www.ncbi.nlm.nih.gov/pmc/tools/openftlist/).
+I wrote this program to help me harvesting citation contexts citing ONE specific paper in the PubMed Open Access Subset (https://www.ncbi.nlm.nih.gov/pmc/tools/openftlist/) by parsing its XML files.
 
-In fact, finding which PMIDs have cited the paper (i.e., mapping) is the hard part and beyond my current skill level. To make the matter simpler, I downloaded the iCite citation report (.xlsx) from iCite (https://icite.od.nih.gov/analysis) of the paper of interest and use it as the input to find all citation contexts. Besides, you will also need the metadata file for the OA subset to find the URLs for XML files of the citing papers (ftp.ncbi.nlm.nih.gov/pub/pmc/oa_file_list.csv).
+Finding which papers have cited the paper (i.e., mapping) is beyond my current skill level, so I took a short cut. I downloaded the iCite citation report (.xlsx) from iCite (https://icite.od.nih.gov/analysis) of the paper of interest and use it as the input to find all citation contexts. You will need to manually obtain this file too. Besides, you will also need the metadata file of the OA subset to find the URLs for retrieving XML files of the citing papers (ftp.ncbi.nlm.nih.gov/pub/pmc/oa_file_list.csv).
 
 The output will be a .csv file including the following columns:  
 - citing_pmid: PMIDs of the papers that cited the paper of interest
