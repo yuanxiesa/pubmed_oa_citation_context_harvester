@@ -1,4 +1,4 @@
-# PubMed Open Access Subset citation context harvester
+# PubMed Open Access Subset Citation Context Harvester
 
 I wrote this program to help me harvesting citation contexts citing ONE specific paper (referred to as the target paper later) in the PubMed Open Access Subset (https://www.ncbi.nlm.nih.gov/pmc/tools/openftlist/) by parsing its XML files.
 
