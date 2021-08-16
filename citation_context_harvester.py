@@ -71,71 +71,75 @@ def xml_processing(cited_pmid, citing_pmid):
 
     find_ref = root.findall(".//*[pub-id='%s']/.." % cited_pmid)
 
-    if len(find_ref) > 1:
-        print('Find more than one ref matching the input pmid. Exit')
-    else:
+    try:
+        if len(find_ref) > 1:
+            print('Find more than one ref matching the input pmid') # write into log
+
         ref_item = find_ref[0]
         ref_id = ref_item.attrib['id']
+        for item in root.findall(".//*[pub-id='%s']/.." % cited_pmid):
+            ref_id = item.attrib['id']
 
-    for item in root.findall(".//*[pub-id='%s']/.." % cited_pmid):
-        ref_id = item.attrib['id']
+        print('Find in this paper, the reference number is: ', ref_id)
 
-    print('Find in this paper, the reference number is: ', ref_id)
+        # use BeautifulSoup to get paragraphs (text between <p> and </p> that contains the target reference)
+        content = []
 
-    # use BeautifulSoup to get paragraphs (text between <p> and </p> that contains the target reference)
-    content = []
+        # Read the XML file
+        with open(xml_file_name, "r") as file:
+            content = file.readlines()
+            # Combine the lines in the list into a string
+            content = "".join(content)
+            bs_content = bs(content, "lxml")
 
-    # Read the XML file
-    with open(xml_file_name, "r") as file:
-        # Read each line in the file, readlines() returns a list of lines
-        content = file.readlines()
-        # Combine the lines in the list into a string
-        content = "".join(content)
-        bs_content = bs(content, "lxml")
+        # find all p element
+        p_l = bs_content.find_all('p')
 
-    # find all p element
-    p_l = bs_content.find_all('p')
+        # list p_target_l contains all p element that contains the reference
+        p_target_l = []
 
-    # list p_target_l contains all p element that contains the reference
-    p_target_l = []
+        for p in p_l:
+            if p.find_all('xref', {'rid': ref_id}):
+                p_target_l.append(p)
 
-    for p in p_l:
-        if p.find_all('xref', {'rid': ref_id}):
-            p_target_l.append(p)
+        # identify the string representing xref
+        try:
+            xref_str = p_target_l[0].find('xref', {'rid': ref_id}).text
+            print("Find in this paper, the citation string is: ", xref_str)
+            # check whether output file exists. Yes: open and read the file; No: initiate a new file
+            out_file_name = 'A' + cited_pmid + '.csv'
+            my_out_file = Path(out_file_name)
 
-    # identify the string representing xref
-    xref_str = p_target_l[0].find('xref', {'rid': ref_id}).text
+            if my_out_file.exists():
+                storage_df = pd.read_csv(my_out_file)
+            else:
+                storage_df = pd.DataFrame(
+                        columns=['citing_pmid', 'cited_pmid', 'in_paper_id', 'citation_str', 'paragraph', 'cit_contxt'])
 
-    print("Find in this paper, the citation string is: ", xref_str)
+            # parse text to find the sentence that contains the citation string
+            for i in range(len(p_target_l)):
+                paragraph = p_target_l[i].text
+                sent_l = sent_tokenize(text=paragraph)
+                cit_contxt = ''
 
-    # check whether output file exists. Yes: open and read the file; No: initiate a new file
-    out_file_name = 'A' + cited_pmid + '.csv'
-    my_out_file = Path(out_file_name)
+                for sent in sent_l:
+                    if xref_str in sent:
+                        cit_contxt = sent
+                        # print(cit_contxt)
 
-    if my_out_file.exists():
-        storage_df = pd.read_csv(my_out_file)
-    else:
-        storage_df = pd.DataFrame(
-            columns=['citing_pmid', 'cited_pmid', 'in_paper_id', 'citation_str', 'paragraph', 'cit_contxt'])
+                storage_df = storage_df.append({'citing_pmid': citing_pmid, 'cited_pmid': citing_pmid,
+                                                    'in_paper_id': i,
+                                                    'citation_str': xref_str,
+                                                    'paragraph': paragraph,
+                                                    'cit_contxt': cit_contxt}, ignore_index=True)
 
-    # parse text to find the sentence that contains the citation string
-    for i in range(len(p_target_l)):
-        paragraph = p_target_l[i].text
-        sent_l = sent_tokenize(text=paragraph)
-        cit_contxt = ''
+                storage_df.to_csv(out_file_name, encoding='utf-8', index=False)
 
-        for sent in sent_l:
-            if xref_str in sent:
-                cit_contxt = sent
-                print(cit_contxt)
+        except IndexError:
+            print('p_target_l is empty ...')  # in the future, write into log
 
-        storage_df = storage_df.append({'citing_pmid': citing_pmid, 'cited_pmid': citing_pmid,
-                                        'in_paper_id': i,
-                                        'citation_str': xref_str,
-                                        'paragraph': paragraph,
-                                        'cit_contxt': cit_contxt}, ignore_index=True)
-
-    storage_df.to_csv(out_file_name, encoding='utf-8', index=False)
+    except IndexError:
+        print('Find_ref is empty')  # in the future, write a log
 
 
 def delete_pmc_folder():
@@ -160,8 +164,7 @@ def main():
     urls = extract_urls(icite_file, oa_list_file)
 
     for i in range(len(urls)):
-
-        print("Downloading file: ", i, '/', len(urls), ',PMID', urls.loc[i, 'PMID'])
+        print("Downloading file: ", (i + 1), '/', len(urls), ',PMID', urls.loc[i, 'PMID'])
         file_download(urls.loc[i, 'File'])
 
         print("Finding citation context sentences ... ")
