@@ -17,8 +17,9 @@ import os
 import shutil
 
 
-def extract_urls(icite_file, oa_list_file):
+def extract_urls(icite_file, oa_list_file, cited_pmid):
     """
+    extract urls of citing articles from the metadata file
     :param: icite_file: the file path of the icite_report
     :param: oa_list_file: the file path of the oa_file_list.csv downloaded from ftp.ncbi.nlm.nih.gov/pub/pmc/oa_file_list.csv
 
@@ -35,11 +36,16 @@ def extract_urls(icite_file, oa_list_file):
     urls = overlap[['PMID', 'File']]
     urls.to_csv('data/urls.csv', index=False)
 
+    percentage = len(urls) / len(icite)
+    write_log(cited_pmid, message='{0:.2%} of citing articles were found in OA\n'.format(percentage))
+    print('{0:.2%} of citing articles were found in OA\n'.format(percentage))
+
     return urls
 
 
 def file_download(input_url):
     """
+    download the compressed file of the citing articles from pubmed FTP server
     :param: input_url: the urls from metadata file (without prefix)
     :return: none
     """
@@ -55,6 +61,7 @@ def file_download(input_url):
 
 def xml_processing(cited_pmid, citing_pmid):
     """
+    processing the xml file to extract ciatiion contexts of the target paper
     :param: input_cited_pmid: the pmid of the target paper whose citation contexts are being analyzed
     :param: input_citing_pmid: the pmid of the paper citing the target paper
 
@@ -73,7 +80,10 @@ def xml_processing(cited_pmid, citing_pmid):
 
     try:
         if len(find_ref) > 1:
-            print('Find more than one ref matching the input pmid') # write into log
+            print('Find more than one ref matching the input pmid')
+            write_log(cited_pmid,
+                      message='Finding more than one ref matching PMID {0} in the citing article PMID {1}\n'.format(
+                          cited_pmid, citing_pmid))
 
         ref_item = find_ref[0]
         ref_id = ref_item.attrib['id']
@@ -114,7 +124,7 @@ def xml_processing(cited_pmid, citing_pmid):
                 storage_df = pd.read_csv(my_out_file)
             else:
                 storage_df = pd.DataFrame(
-                        columns=['citing_pmid', 'cited_pmid', 'in_paper_id', 'citation_str', 'paragraph', 'cit_contxt'])
+                    columns=['citing_pmid', 'cited_pmid', 'in_paper_id', 'citation_str', 'paragraph', 'cit_contxt'])
 
             # parse text to find the sentence that contains the citation string
             for i in range(len(p_target_l)):
@@ -128,27 +138,46 @@ def xml_processing(cited_pmid, citing_pmid):
                         # print(cit_contxt)
 
                 storage_df = storage_df.append({'citing_pmid': citing_pmid, 'cited_pmid': citing_pmid,
-                                                    'in_paper_id': i,
-                                                    'citation_str': xref_str,
-                                                    'paragraph': paragraph,
-                                                    'cit_contxt': cit_contxt}, ignore_index=True)
+                                                'in_paper_id': i,
+                                                'citation_str': xref_str,
+                                                'paragraph': paragraph,
+                                                'cit_contxt': cit_contxt}, ignore_index=True)
 
                 storage_df.to_csv(out_file_name, encoding='utf-8', index=False)
 
         except IndexError:
-            print('p_target_l is empty ...')  # in the future, write into log
+            print('p_target_l is empty ...')
+            write_log(cited_pmid,
+                      message='No citation context of {0} was found in the citing article PMID {1}\n'.format(cited_pmid,
+                                                                                                             citing_pmid))
 
     except IndexError:
-        print('Find_ref is empty')  # in the future, write a log
+        print('Find_ref is empty')
+        write_log(cited_pmid,
+                  message='No reference of {0} was found in citing article PMID {1}\n'.format(cited_pmid, citing_pmid))
 
 
 def delete_pmc_folder():
     """
+    delete the processed pmc folder from disk
     :return: None. Delete all folders that start with PMC in data folder, after processing the content.
     """
     folder_name_l = glob.glob("data/PMC*")
     for folder_name in folder_name_l:
         shutil.rmtree(folder_name)
+
+
+def write_log(cited_pmid, message):
+    """
+    write messages into log file
+    :param cited_pmid: provide the pmid of the target paper for log file name
+    :param message: the message need to be written into the log file
+    :return: None. Write into the log file.
+    """
+    file_name = cited_pmid + '.txt'
+    log_file = open(file_name, 'a')
+    log_file.write(message)
+    log_file.close()
 
 
 def main():
@@ -159,9 +188,10 @@ def main():
     icite_file = input('Please enter the path to the icite report: ')
     oa_list_file = input('Please enter the path to the oa metadata file: ')
     cited_pmid = input('Please enter the pmid of the paper whose citation context will be harvested: ')
+    print()
 
     print('Extracting urls for all citing articles ...')
-    urls = extract_urls(icite_file, oa_list_file)
+    urls = extract_urls(icite_file, oa_list_file, cited_pmid)
 
     for i in range(len(urls)):
         print("Downloading file: ", (i + 1), '/', len(urls), ',PMID', urls.loc[i, 'PMID'])
