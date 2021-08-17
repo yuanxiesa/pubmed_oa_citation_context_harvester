@@ -90,7 +90,7 @@ def xml_processing(cited_pmid, citing_pmid):
         for item in root.findall(".//*[pub-id='%s']/.." % cited_pmid):
             ref_id = item.attrib['id']
 
-        print('Find in this paper, the reference number is: ', ref_id)
+        print('Find in this paper, the reference string is: ', ref_id)
 
         # use BeautifulSoup to get paragraphs (text between <p> and </p> that contains the target reference)
         content = []
@@ -134,7 +134,7 @@ def xml_processing(cited_pmid, citing_pmid):
 
                 for sent in sent_l:
                     if xref_str in sent:
-                        cit_contxt = sent
+                        cit_contxt = sent.replace("\n", " ")
                         # print(cit_contxt)
 
                 storage_df = storage_df.append({'citing_pmid': citing_pmid, 'cited_pmid': citing_pmid,
@@ -174,7 +174,7 @@ def write_log(cited_pmid, message):
     :param message: the message need to be written into the log file
     :return: None. Write into the log file.
     """
-    file_name = cited_pmid + '.txt'
+    file_name = 'LOG' + cited_pmid + '.txt'
     log_file = open(file_name, 'a')
     log_file.write(message)
     log_file.close()
@@ -203,6 +203,8 @@ def main():
         print("Delete PMC folder after content processing ...")
         delete_pmc_folder()
         print()
+
+    print('Processing completed.')
 
 
 if __name__ == "__main__":
