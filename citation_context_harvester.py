@@ -174,7 +174,7 @@ def write_log(cited_pmid, message):
     :param message: the message need to be written into the log file
     :return: None. Write into the log file.
     """
-    file_name = 'LOG' + cited_pmid + '.txt'
+    file_name = 'L' + cited_pmid + '.txt'
     log_file = open(file_name, 'a')
     log_file.write(message)
     log_file.close()
