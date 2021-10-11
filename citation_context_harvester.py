@@ -31,6 +31,7 @@ def extract_urls(icite_file, oa_list_file, cited_pmid):
 
     # find overlap
     overlap = icite.merge(oa_list, on='PMID')
+    overlap.to_csv('license_file.csv', index=False)
 
     # get urls
     urls = overlap[['PMID', 'File']]
@@ -137,7 +138,7 @@ def xml_processing(cited_pmid, citing_pmid):
                         cit_contxt = sent.replace("\n", " ")
                         # print(cit_contxt)
 
-                storage_df = storage_df.append({'citing_pmid': citing_pmid, 'cited_pmid': citing_pmid,
+                storage_df = storage_df.append({'citing_pmid': citing_pmid, 'cited_pmid': cited_pmid,
                                                 'in_paper_id': i,
                                                 'citation_str': xref_str,
                                                 'paragraph': paragraph,
