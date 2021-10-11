@@ -16,4 +16,5 @@ The output will be a .csv file including the following columns:
 
 I also added a .yml file to help you reconstruct the environment that I use (i.e., all packages)
 
-### Version 1.0: completed Aug 17, 2021
+## Version History
+**Version 1.0**: completed Aug 17, 2021
