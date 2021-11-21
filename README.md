@@ -18,4 +18,5 @@ I also added a .yml file to help you reconstruct the environment that I use (i.e
 
 ## Version History
 **Version 1.0.0**: completed Aug 17, 2021
+
 **Version 1.0.1**: Oct 11, 2021, fixed minor errors
